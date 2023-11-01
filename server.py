@@ -21,7 +21,9 @@ def _decrypt(data):
     iv = b"\xe1o\x840F\xbd\xe2\x8d\xc7\rxT\x0c\x8f\xb02"
     cipher = AES.new(key, AES.MODE_CBC, iv)
 
-    return _remove_padding(cipher.decrypt(data))
+    decrypted_data = cipher.decrypt(data)
+
+    return _remove_padding(decrypted_data)
 
 
 if len(sys.argv) != 2:
@@ -63,8 +65,14 @@ while True:
 
     data = client_socket.recv(1024)
 
-    decrypted_data = _decrypt(data)
+    try:
+        decrypted_data = _decrypt(data)
+    except Exception as e:
+        print("Error decrypting data: {}".format(e))
+        client_socket.send(b"0")
+        continue
     # print("Undecrypted data: {}".format(data))
     print("Decrypted data: {}".format(decrypted_data))
+    client_socket.send(b"1")
 
     client_socket.close()

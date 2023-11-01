@@ -44,6 +44,13 @@ try:
     client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     client_socket.connect((SERVER_ADDRESS, SERVER_PORT))
     client_socket.sendall(encrypt(message))
+
+    data = client_socket.recv(1024)
+
+    if data == b"1":
+        print(True)
+    else:
+        print(False)
 except ConnectionRefusedError:
     print("Connection refused. Please check the server address and port.")
     sys.exit(1)
