@@ -26,10 +26,10 @@ def _remove_padding(data):
 
 def _decrypt(data):
     key = b"m\x856n\xb4\xccF\xa7\xb0\xaas\x9cr\xe08\xce"
-    iv = b"\xe1o\x840F\xbd\xe2\x8d\xc7\rxT\x0c\x8f\xb02"
+    iv = data[:BLOCK_SIZE]
     cipher = AES.new(key, AES.MODE_CBC, iv)
 
-    decrypted_data = cipher.decrypt(data)
+    decrypted_data = cipher.decrypt(data[BLOCK_SIZE:])
 
     return _remove_padding(decrypted_data)
 
@@ -75,6 +75,8 @@ while True:
 
     try:
         decrypted_data = _decrypt(data)
+        if decrypted_data == None:
+            raise Exception("Padding error")
     except Exception as e:
         logger.error("Error decrypting data: {}".format(e))
         client_socket.send(b"0")
