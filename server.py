@@ -19,9 +19,9 @@ def _remove_padding(data):
 def _decrypt(data):
     key = b"m\x856n\xb4\xccF\xa7\xb0\xaas\x9cr\xe08\xce"
     iv = b"\xe1o\x840F\xbd\xe2\x8d\xc7\rxT\x0c\x8f\xb02"
-
     cipher = AES.new(key, AES.MODE_CBC, iv)
-    return _remove_padding(cipher.decrypt(data[BLOCK_SIZE:]))
+
+    return _remove_padding(cipher.decrypt(data))
 
 
 if len(sys.argv) != 2:
