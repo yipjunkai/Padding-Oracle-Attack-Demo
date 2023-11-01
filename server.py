@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 BLOCK_SIZE = AES.block_size
 
 
-def _remove_padding(data):
+def _remove_padding(data: bytes):
     pad_len = data[-1]
 
     if pad_len < 1 or pad_len > BLOCK_SIZE:
@@ -25,14 +25,14 @@ def _remove_padding(data):
     return data[:-pad_len]
 
 
-def _decrypt(data):
+def _decrypt(data: bytes):
     key = b"m\x856n\xb4\xccF\xa7\xb0\xaas\x9cr\xe08\xce"
     iv = data[:BLOCK_SIZE]
     cipher = AES.new(key, AES.MODE_CBC, iv)
 
     decrypted_data = cipher.decrypt(data[BLOCK_SIZE:])
 
-    return _remove_padding(decrypted_data)
+    return _remove_padding(decrypted_data).decode("utf-8")
 
 
 if len(sys.argv) != 2:
