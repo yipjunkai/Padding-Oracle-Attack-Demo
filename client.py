@@ -1,6 +1,6 @@
 import socket
 import sys
-from Cryptodome.Cipher import AES
+from Crypto.Cipher import AES
 
 KEY_LENGTH = 16  # AES128
 BLOCK_SIZE = AES.block_size
@@ -12,11 +12,10 @@ def _add_padding(msg):
     return msg + padding
 
 
-def encrypt(msg):
+def encrypt(iv, msg):
     key = b"m\x856n\xb4\xccF\xa7\xb0\xaas\x9cr\xe08\xce"
-    iv = b"\xe1o\x840F\xbd\xe2\x8d\xc7\rxT\x0c\x8f\xb02"
     cipher = AES.new(key, AES.MODE_CBC, iv)
-    return iv+cipher.encrypt(_add_padding(msg))
+    return iv + cipher.encrypt(_add_padding(msg))
 
 
 if len(sys.argv) != 3:
@@ -42,7 +41,8 @@ while True:
 try:
     client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     client_socket.connect((SERVER_ADDRESS, SERVER_PORT))
-    client_socket.sendall(encrypt(message))
+    iv = client_socket.recv(1024)
+    client_socket.sendall(encrypt(iv, message))
 
     data = client_socket.recv(1024)
 

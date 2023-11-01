@@ -1,5 +1,6 @@
+from hashlib import md5
 import logging
-import os
+from random import randint
 import socket
 import sys
 
@@ -67,6 +68,7 @@ while True:
     try:
         client_socket, addr = server_socket.accept()
         logger.info("Got a connection from {}".format(addr))
+        client_socket.send(md5(randint(0, 256).to_bytes(2, "big")).digest())
     except socket.error as e:
         logger.error("Error accepting connection: {}".format(e))
         continue
