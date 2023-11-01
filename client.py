@@ -1,6 +1,6 @@
 import socket
 import sys
-from Crypto.Cipher import AES
+from Cryptodome.Cipher import AES
 
 KEY_LENGTH = 16  # AES128
 BLOCK_SIZE = AES.block_size
@@ -16,8 +16,7 @@ def encrypt(msg):
     key = b"m\x856n\xb4\xccF\xa7\xb0\xaas\x9cr\xe08\xce"
     iv = b"\xe1o\x840F\xbd\xe2\x8d\xc7\rxT\x0c\x8f\xb02"
     cipher = AES.new(key, AES.MODE_CBC, iv)
-
-    return cipher.encrypt(_add_padding(msg))
+    return iv+cipher.encrypt(_add_padding(msg))
 
 
 if len(sys.argv) != 3:
