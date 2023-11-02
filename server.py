@@ -1,10 +1,11 @@
-from hashlib import md5
 import logging
-from random import randint
 import socket
 import sys
 
 from Crypto.Cipher import AES
+from Crypto import Random
+
+random_gen = Random.new()
 
 logging.basicConfig(
     format="%(asctime)s: %(levelname)s: %(message)s", level=logging.INFO
@@ -32,7 +33,7 @@ def _decrypt(data: bytes):
 
     decrypted_data = cipher.decrypt(data[BLOCK_SIZE:])
 
-    return _remove_padding(decrypted_data).decode("utf-8")
+    return _remove_padding(decrypted_data)
 
 
 if len(sys.argv) != 2:
@@ -68,13 +69,12 @@ while True:
     try:
         client_socket, addr = server_socket.accept()
         logger.info("Got a connection from {}".format(addr))
-        client_socket.send(md5(randint(0, 256).to_bytes(2, "big")).digest())
+        client_socket.send(random_gen.read(AES.block_size))
     except socket.error as e:
         logger.error("Error accepting connection: {}".format(e))
         continue
 
     data = client_socket.recv(1024)
-
     try:
         decrypted_data = _decrypt(data)
         if decrypted_data == None:

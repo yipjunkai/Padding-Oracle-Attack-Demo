@@ -32,8 +32,8 @@ except ValueError:
 
 while True:
     message = input("Enter message: ")
-    if len(message) > 16:
-        print("Message too long. Max 16 characters.")
+    if len(message) > 256:
+        print("Message too long. Max 256 characters.")
         continue
     message = bytes(message, "utf-8")
     break

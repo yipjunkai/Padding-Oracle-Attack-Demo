@@ -1,34 +1,68 @@
 import socket
 import sys
-from Cryptodome.Cipher import AES
+import time
+from Crypto.Cipher import AES
 
 BLOCK_SIZE = AES.block_size
 
-SERVER_ADDRESS="10.91.192.26"
+
+SERVER_ADDRESS="192.168.1.115"
 SERVER_PORT=1404
+
+plaintext=""
+
+def _remove_padding(data: bytes):
+    pad_len = data[-1]
+
+    if pad_len < 1 or pad_len > BLOCK_SIZE:
+        return data
+    for i in range(1, pad_len):
+        if data[-i - 1] != pad_len:
+            return None
+    return data[:-pad_len]
+        
+    return data[:-pad_len]
 
 def is_padding_ok(msg):
     client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     client_socket.connect((SERVER_ADDRESS, SERVER_PORT))
-    client_socket.sendall(msg)
+    
+    client_socket.send(msg)
 
     data = client_socket.recv(1024)
 
+    client_socket.send(msg)
+
+    data = client_socket.recv(1024)
+    
     if data == b'1':
         return True
 
     return False
 
+def split(ciphertext):
+    global plaintext
+    start=len(ciphertext)-32
+    end=len(ciphertext)
+    num=int(len(ciphertext)/16)
+    for block in range (num,1,-1):
+        attack(ciphertext[start:end])
+        start-=16
+        end-=16
+    print("Final plaintext: "+plaintext)
+
 def attack(ciphertext):
+
+    global plaintext
+
+    segment=[0]*16
+    segment=bytearray(segment)
   
     temp=[0]*16
     temp=bytearray(temp)
 
     mod=[0]*16
     mod=bytearray(mod)
-
-    plaintext=[0]*16
-    plaintext=bytearray(plaintext)
 
     #split into 2 blocks
     #block0 XOR D(block1)= plaintext + padding
@@ -56,7 +90,8 @@ def attack(ciphertext):
 
         temp[index]=i^mul
         element=int(block0[index])
-        plaintext[index]=element^temp[index]
+        segment[index]=element^temp[index]
+        #print("Decoded char:" + chr(segment[index]))
   #=======================================#
 
   #get first char
@@ -73,8 +108,17 @@ def attack(ciphertext):
 
     temp[0]=i^mul
     element=int(block0[0])
-    plaintext[0]=element^temp[0]
-    print(plaintext)
+    segment[0]=element^temp[0]
+    #print("Decoded char:" + chr(segment[0]))
+    try:
+        block_plaintext=_remove_padding(segment).decode()
+    except:
+        print("ERROR")
+        return
+
+    print("Block data: "+block_plaintext)
+    plaintext=block_plaintext+plaintext
+    return 
 
 
 if len(sys.argv) != 2:
@@ -106,19 +150,24 @@ server_socket.listen(1)
 
 print("Server is listening on {}:{}".format(myIP, port))
 
+client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+client_socket.connect((SERVER_ADDRESS, SERVER_PORT))
+iv = client_socket.recv(1024)
+client_socket.send(b"MTIM connected")
+
 while True:
     try:
         client_socket, addr = server_socket.accept()
+        client_socket.send(iv)
         print("Got a connection from {}".format(addr))
     except socket.error as e:
         print("Error accepting connection: {}".format(e))
         continue
-
     data = client_socket.recv(1024)
     print("Undecrypted data: {}".format(data))
 
     try:
-        attack(data)
+        split(data)
     except ConnectionRefusedError:
         print("Connection refused. Please check the server address and port.")
         sys.exit(1)
