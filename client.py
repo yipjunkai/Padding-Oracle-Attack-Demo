@@ -42,7 +42,7 @@ try:
     client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     client_socket.connect((SERVER_ADDRESS, SERVER_PORT))
     iv = client_socket.recv(1024)
-    client_socket.sendall(encrypt(iv, message))
+    client_socket.send(encrypt(iv, message))
 
     data = client_socket.recv(1024)
 
