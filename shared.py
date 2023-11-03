@@ -5,7 +5,7 @@ BLOCK_SIZE = AES.block_size
 
 
 # For server.py
-def _remove_padding(data: bytes) -> bytes:
+def remove_padding(data: bytes) -> bytes:
     """
     Removes PKCS#7 padding from the given data.
 
@@ -36,7 +36,7 @@ def decrypt(key: bytes, data: bytes) -> bytes:
         key (bytes): The key to use for decryption.
 
     Returns:
-        bytes: The decrypted data, or None if the padding is invalid.
+        bytes: The decrypted data with padding removed, or None if the padding is invalid.
     """
     iv = data[:BLOCK_SIZE]
     cipher = AES.new(key, AES.MODE_CBC, iv)
@@ -46,11 +46,11 @@ def decrypt(key: bytes, data: bytes) -> bytes:
     if decrypted_data is None:
         raise Exception("Padding error")
 
-    return _remove_padding(decrypted_data)
+    return remove_padding(decrypted_data)
 
 
 # For client.py
-def _add_padding(msg: bytes) -> bytes:
+def __add_padding(msg: bytes) -> bytes:
     """
     Adds PKCS#7 padding to the given message.
 
@@ -78,4 +78,4 @@ def encrypt(key: bytes, iv: bytes, msg: bytes) -> bytes:
         bytes: The encrypted message.
     """
     cipher = AES.new(key, AES.MODE_CBC, iv)
-    return iv + cipher.encrypt(_add_padding(msg))
+    return iv + cipher.encrypt(__add_padding(msg))

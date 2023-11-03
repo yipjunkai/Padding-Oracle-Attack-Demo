@@ -3,10 +3,9 @@ import os
 import socket
 import sys
 
-from Crypto.Cipher import AES
 from Crypto import Random
 
-from shared import decrypt
+from shared import BLOCK_SIZE, decrypt
 
 
 logging.basicConfig(
@@ -15,8 +14,6 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-BLOCK_SIZE = AES.block_size
-IV = Random.new().read(BLOCK_SIZE)
 KEY = b"m\x856n\xb4\xccF\xa7\xb0\xaas\x9cr\xe08\xce"
 
 
@@ -53,11 +50,14 @@ logger.info(f"Server is listening on {ip}:{PORT}")
 while True:
     try:
         client_socket, addr = server_socket.accept()
-        client_socket.send(IV)
+        iv = Random.new().read(BLOCK_SIZE)
+        client_socket.send(iv)
         logger.info(f"Got a connection from {addr}")
 
         data = client_socket.recv(1024)
         decrypted_data = decrypt(KEY, data)
+        if decrypted_data is None:
+            raise Exception("Error decrypting data")
     except ConnectionError:
         logger.exception("Error with socket connection")
         client_socket.send(b"0")
@@ -69,7 +69,7 @@ while True:
         client_socket.close()
         continue
     except Exception as e:
-        logger.exception("Error decrypting data")
+        logger.exception("General error")
         client_socket.send(b"0")
         client_socket.close()
         continue

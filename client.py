@@ -54,9 +54,9 @@ try:
     data = client_socket.recv(1024)
 
     if data == b"1":
-        logger.info(True)
+        logger.info("Message sent successfully")
     else:
-        logger.error(False)
+        logger.error("Error sending message")
 except socket.error as e:
     logger.exception("Error sending data")
 finally:
