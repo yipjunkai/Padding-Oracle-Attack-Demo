@@ -6,7 +6,7 @@ import sys
 from Crypto.Cipher import AES
 from tqdm import tqdm
 
-from shared import remove_padding
+from shared import remove_padding,remove_hash
 
 
 logging.basicConfig(
@@ -32,7 +32,7 @@ def check_against_server(msg: bytes) -> bool:
         logger.exception("Error creating socket")
         sys.exit(1)
 
-    if data == b"1":
+    if data != b"0":
         return True
 
     return False
@@ -147,8 +147,6 @@ try:
             continue
 
         logger.info(f"Undecrypted data: {cipher_text}")
-        client_socket.send(b"1")
-        client_socket.close()
 
         plain_text = b""
 
@@ -158,8 +156,19 @@ try:
                 cipher_text[(__block - 2) * BLOCK_SIZE : (__block) * BLOCK_SIZE]
             )
             plain_text = __block_text + plain_text
+        
+        #send back ack from server 
+        proxy_server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        proxy_server_socket.connect((SERVER_ADDRESS, SERVER_PORT))
+        proxy_server_socket.recv(1024)
+        proxy_server_socket.send(cipher_text)
+        ack=proxy_server_socket.recv(1024) 
+        client_socket.send(ack)
+        client_socket.close()
+        logger.info(f"Decrypted data: {remove_hash(remove_padding(plain_text))}")
 
-        logger.info(f"Decrypted data: {remove_padding(plain_text)}")
+
+
 except KeyboardInterrupt:
     logger.info("Shutting down proxy server")
     client_proxy_socket.close()

@@ -42,8 +42,8 @@ except socket.error as e:
 
 while True:
     message = input("Enter message: ")
-    if len(message) > 256:
-        logger.error("Message too long. Max 256 characters.")
+    if len(message) > 240:
+        logger.error("Message too long. Max 240 characters.")
         continue
     message = bytes(message, "utf-8")
     break

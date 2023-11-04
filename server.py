@@ -5,7 +5,7 @@ import sys
 
 from Crypto import Random
 
-from shared import BLOCK_SIZE, decrypt
+from shared import BLOCK_SIZE, decrypt,verify_hash,remove_hash
 
 
 logging.basicConfig(
@@ -48,6 +48,7 @@ server_socket.settimeout(1)
 
 logger.info(f"Server is listening on {ip}:{PORT}")
 
+
 try:
     while True:
         try:
@@ -80,7 +81,17 @@ try:
             client_socket.close()
             continue
 
-        logger.info(f"Decrypted data: {decrypted_data}")
+        hash_check=verify_hash(decrypted_data)
+        if hash_check == 0:
+            logger.info(f"Hash error")
+            client_socket.send(b"2")
+            client_socket.close()
+            continue
+
+        logger.info(f"Decrypted data: {remove_hash(decrypted_data)}")
+        file = open("Messages.txt", "a")
+        file.write(remove_hash(decrypted_data).decode()+"\n")
+        file.close()
         client_socket.send(b"1")
         client_socket.close()
 except KeyboardInterrupt:

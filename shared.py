@@ -1,4 +1,5 @@
 from Crypto.Cipher import AES
+from Crypto.Hash import MD5
 
 
 BLOCK_SIZE = AES.block_size
@@ -73,9 +74,29 @@ def encrypt(key: bytes, iv: bytes, msg: bytes) -> bytes:
         key (bytes): The key to use for encryption.
         iv (bytes): The initialization vector to use for encryption.
         msg (bytes): The message to encrypt.
+        hash (bytes): Hash of the message
 
     Returns:
         bytes: The encrypted message.
     """
     cipher = AES.new(key, AES.MODE_CBC, iv)
-    return iv + cipher.encrypt(__add_padding(msg))
+    hash=add_hash(msg)
+    return iv + cipher.encrypt(__add_padding(msg+hash))
+
+def add_hash(msg: bytes):
+    
+    h = MD5.new()
+    h.update(msg)
+    return h.digest()
+
+def verify_hash(msg: bytes):
+    
+    text=msg[:-16]
+    h = MD5.new()
+    h.update(text)
+    if(h.digest() != msg[-16:]):
+        return 0
+    return 1
+
+def remove_hash(msg: bytes):
+    return msg[:-16]
