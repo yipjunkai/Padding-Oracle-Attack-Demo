@@ -55,6 +55,8 @@ while True:
         logger.info(f"Got a connection from {addr}")
 
         data = client_socket.recv(1024)
+        if data == b"":
+            raise ConnectionError("Connection closed by client")
         decrypted_data = decrypt(KEY, data)
         if decrypted_data is None:
             raise Exception("Error decrypting data")

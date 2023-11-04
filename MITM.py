@@ -19,15 +19,18 @@ BLOCK_SIZE = AES.block_size
 
 
 def check_against_server(msg: bytes) -> bool:
-    proxy_server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
-    proxy_server_socket.connect((SERVER_ADDRESS, SERVER_PORT))
-
-    proxy_server_socket.recv(1024)
-
-    proxy_server_socket.send(msg)
-
-    data = proxy_server_socket.recv(1024)
+    try:
+        proxy_server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        proxy_server_socket.connect((SERVER_ADDRESS, SERVER_PORT))
+        proxy_server_socket.recv(1024)  # receive iv
+        proxy_server_socket.send(msg)
+        data = proxy_server_socket.recv(1024)
+    except ConnectionRefusedError:
+        logger.exception("Connection refused")
+        sys.exit(1)
+    except socket.error as e:
+        logger.exception("Error creating socket")
+        sys.exit(1)
 
     if data == b"1":
         return True
@@ -40,7 +43,7 @@ def attack_data(ciphertext: bytes) -> bytes:
 
     start = len(ciphertext) - (BLOCK_SIZE * 2)
     end = len(ciphertext)
-    num_of_blocks = int(len(ciphertext) / BLOCK_SIZE)
+    num_of_blocks = len(ciphertext) // BLOCK_SIZE
     for __block in tqdm(range(num_of_blocks, 1, -1), leave=False):
         plain_text = attack(ciphertext[start:end]) + plain_text
         start -= 16
@@ -53,10 +56,8 @@ def attack(ciphertext: bytes) -> bytes:
     temp = bytearray([0] * 16)
     mod = bytearray([0] * 16)
 
-    # split into 2 blocks
-    # block0 XOR D(block1)= plaintext + padding
-    block0 = ciphertext[:16]  # contains IV
-    block1 = ciphertext[16:32]  # contains plaintext + padding
+    iv_block = ciphertext[:16]
+    cipher_block = ciphertext[16:32]
 
     multiplier = 0
 
@@ -65,23 +66,23 @@ def attack(ciphertext: bytes) -> bytes:
         extra_bytes = b""
         for inner_index in tqdm(range(15, 15 - (multiplier - 1), -1), leave=False):
             mod[inner_index] = multiplier ^ temp[inner_index]
-            extra_bytes = bytes([mod[inner_index]]) + extra_bytes
+            extra_bytes = bytes((mod[inner_index],)) + extra_bytes
 
         for i in tqdm(range(1, 256), leave=False):
-            modified_block0 = block0[:-multiplier] + bytes([i]) + extra_bytes
-            modified_ciphertext = modified_block0 + block1
+            modified_block0 = iv_block[:-multiplier] + bytes((i,)) + extra_bytes
+            modified_ciphertext = modified_block0 + cipher_block
             if check_against_server(modified_ciphertext):
                 second_modified_block0 = (
                     modified_block0[: -(multiplier + 1)]
-                    + bytes([0xFF])
+                    + b"\xFF"
                     + modified_block0[index:]
                 )
-                test_correctness = second_modified_block0 + block1
+                test_correctness = second_modified_block0 + cipher_block
                 if check_against_server(test_correctness):
                     break
 
         temp[index] = i ^ multiplier
-        element = int(block0[index])
+        element = iv_block[index]
         segment[index] = element ^ temp[index]
 
     # get first char
@@ -89,15 +90,15 @@ def attack(ciphertext: bytes) -> bytes:
     extra_bytes = b""
     for inner_index in range(15, 0, -1):
         mod[inner_index] = multiplier ^ temp[inner_index]
-        extra_bytes = bytes([mod[inner_index]]) + extra_bytes
+        extra_bytes = bytes((mod[inner_index],)) + extra_bytes
     for i in range(1, 256):
-        modified_block0 = bytes([i]) + extra_bytes
-        modified_ciphertext = modified_block0 + block1
+        modified_block0 = bytes((i,)) + extra_bytes
+        modified_ciphertext = modified_block0 + cipher_block
         if check_against_server(modified_ciphertext):
             break
 
     temp[0] = i ^ multiplier
-    element = int(block0[0])
+    element = iv_block[0]
     segment[0] = element ^ temp[0]
 
     return bytes(segment)
