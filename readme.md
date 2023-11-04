@@ -30,6 +30,8 @@ The Padding Oracle Attack is a cryptographic attack that takes advantage of vuln
 
 ## Simulation Parameters
 
+![Cipher text composition](./readme/composition.png)
+
 In this simulation, we define the following key parameters and conditions to facilitate the simulation of the attack:
 
 1. **Hash**: A (16 byte) MD5 hash of the plain text is appended to the plain text before encryption.
@@ -38,7 +40,7 @@ In this simulation, we define the following key parameters and conditions to fac
 
 3. **Encryption key**: The encryption key is fixed on both server and client. A random 16-byte was chosen.
 
-4. **Initialization Vector (IV) Generation**: The server generates the Initialization Vector (IV) randomly for each encryption session and passes it over to the client / MITM during the initial connection.
+4. **Initialization Vector (IV) Generation**: The server generates the IV randomly for each encryption session and passes it over to the client / MITM during the initial connection.
 
 5. **Padding Scheme**: We assume the use of PKCS7 padding in this simulation. It is used for simplicity in this project.
 
@@ -97,4 +99,4 @@ To use this project, you need to run the server, client, and MITM scripts with t
 
 ### Diagrams Generated with DiagramGPT
 
-The diagrams featured in this README were created using [DiagramGPT](https://eraser.io) by [eraser.io](https://eraser.io). These visuals are designed to facilitate the understanding of complex concepts. Please be aware that they are intended for educational purposes.
+The System Illustrations diagrams featured in this README were created using [DiagramGPT](https://eraser.io) by [eraser.io](https://eraser.io). These visuals are designed to facilitate understanding the interactions between Client, Server and MITM. Please be aware that they are intended for educational purposes.
