@@ -38,19 +38,6 @@ def check_against_server(msg: bytes) -> bool:
     return False
 
 
-def attack_data(ciphertext: bytes) -> bytes:
-    plain_text = b""
-
-    start = len(ciphertext) - (BLOCK_SIZE * 2)
-    end = len(ciphertext)
-    num_of_blocks = len(ciphertext) // BLOCK_SIZE
-    for __block in tqdm(range(num_of_blocks, 1, -1), leave=False):
-        plain_text = attack(ciphertext[start:end]) + plain_text
-        start -= BLOCK_SIZE
-        end -= BLOCK_SIZE
-    return plain_text
-
-
 def attack(ciphertext: bytes) -> bytes:
     segment = bytearray([0] * BLOCK_SIZE)
     temp = bytearray([0] * BLOCK_SIZE)
@@ -143,8 +130,7 @@ while True:
         client_socket.send(iv)
         logger.info(f"Got a connection from {addr}")
 
-        data = client_socket.recv(1024)
-        logger.info(f"Undecrypted data: {data}")
+        cipher_text = client_socket.recv(1024)
     except ConnectionError:
         logger.exception("Error with socket connection")
         client_socket.send(b"0")
@@ -156,8 +142,17 @@ while True:
         client_socket.close()
         continue
 
+    logger.info(f"Undecrypted data: {cipher_text}")
     client_socket.send(b"1")
     client_socket.close()
 
-    plain_text = remove_padding(attack_data(data))
-    logger.info(f"Decrypted data: {plain_text}")
+    plain_text = b""
+
+    num_of_blocks = len(cipher_text) // BLOCK_SIZE
+    for __block in tqdm(range(num_of_blocks, 1, -1), leave=False):
+        __block_text = attack(
+            cipher_text[(__block - 2) * BLOCK_SIZE : (__block) * BLOCK_SIZE]
+        )
+        plain_text = __block_text + plain_text
+
+    logger.info(f"Decrypted data: {remove_padding(plain_text)}")
