@@ -61,7 +61,7 @@ def attack(ciphertext: bytes) -> bytes:
 
     multiplier = 0
 
-    for index in tqdm(range(15, 0, -1), leave=False):
+    for index in tqdm(range(15, -1, -1), leave=False):
         multiplier += 1
         extra_bytes = b""
         for inner_index in tqdm(range(15, 15 - (multiplier - 1), -1), leave=False):
@@ -72,6 +72,8 @@ def attack(ciphertext: bytes) -> bytes:
             modified_block0 = iv_block[:-multiplier] + bytes((i,)) + extra_bytes
             modified_ciphertext = modified_block0 + cipher_block
             if check_against_server(modified_ciphertext):
+                if multiplier == 16:
+                    break
                 second_modified_block0 = (
                     modified_block0[: -(multiplier + 1)]
                     + b"\xFF"
@@ -82,24 +84,7 @@ def attack(ciphertext: bytes) -> bytes:
                     break
 
         temp[index] = i ^ multiplier
-        element = iv_block[index]
-        segment[index] = element ^ temp[index]
-
-    # get first char
-    multiplier += 1
-    extra_bytes = b""
-    for inner_index in range(15, 0, -1):
-        mod[inner_index] = multiplier ^ temp[inner_index]
-        extra_bytes = bytes((mod[inner_index],)) + extra_bytes
-    for i in range(1, 256):
-        modified_block0 = bytes((i,)) + extra_bytes
-        modified_ciphertext = modified_block0 + cipher_block
-        if check_against_server(modified_ciphertext):
-            break
-
-    temp[0] = i ^ multiplier
-    element = iv_block[0]
-    segment[0] = element ^ temp[0]
+        segment[index] = iv_block[index] ^ temp[index]
 
     return bytes(segment)
 
