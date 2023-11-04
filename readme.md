@@ -1,5 +1,7 @@
 # AES-CBC Padding Oracle Attack Demonstration
 
+![GitHub Repo stars](https://img.shields.io/github/stars/yipjunkai/AES-CBC-Padding-Oracle-Attack-Demo) ![GitHub forks](https://img.shields.io/github/forks/yipjunkai/AES-CBC-Padding-Oracle-Attack-Demo)
+
 This project is a comprehensive demonstration of a Padding Oracle Attack on AES in Cipher Block Chaining (CBC) mode. It aims to provide a clear understanding of how vulnerabilities in cryptographic implementations can be exploited.
 
 In this simulation:
