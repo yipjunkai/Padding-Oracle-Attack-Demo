@@ -46,33 +46,35 @@ def attack_data(ciphertext: bytes) -> bytes:
     num_of_blocks = len(ciphertext) // BLOCK_SIZE
     for __block in tqdm(range(num_of_blocks, 1, -1), leave=False):
         plain_text = attack(ciphertext[start:end]) + plain_text
-        start -= 16
-        end -= 16
+        start -= BLOCK_SIZE
+        end -= BLOCK_SIZE
     return plain_text
 
 
 def attack(ciphertext: bytes) -> bytes:
-    segment = bytearray([0] * 16)
-    temp = bytearray([0] * 16)
-    mod = bytearray([0] * 16)
+    segment = bytearray([0] * BLOCK_SIZE)
+    temp = bytearray([0] * BLOCK_SIZE)
+    mod = bytearray([0] * BLOCK_SIZE)
 
-    iv_block = ciphertext[:16]
-    cipher_block = ciphertext[16:32]
+    iv_block = ciphertext[:BLOCK_SIZE]
+    cipher_block = ciphertext[BLOCK_SIZE:]
 
     multiplier = 0
 
-    for index in tqdm(range(15, -1, -1), leave=False):
+    for index in tqdm(range(BLOCK_SIZE - 1, -1, -1), leave=False):
         multiplier += 1
         extra_bytes = b""
-        for inner_index in tqdm(range(15, 15 - (multiplier - 1), -1), leave=False):
+        for inner_index in tqdm(
+            range(BLOCK_SIZE - 1, BLOCK_SIZE - multiplier, -1), leave=False
+        ):
             mod[inner_index] = multiplier ^ temp[inner_index]
             extra_bytes = bytes((mod[inner_index],)) + extra_bytes
 
-        for i in tqdm(range(1, 256), leave=False):
+        for i in tqdm(range(256), leave=False):
             modified_block0 = iv_block[:-multiplier] + bytes((i,)) + extra_bytes
             modified_ciphertext = modified_block0 + cipher_block
             if check_against_server(modified_ciphertext):
-                if multiplier == 16:
+                if multiplier == BLOCK_SIZE:
                     break
                 second_modified_block0 = (
                     modified_block0[: -(multiplier + 1)]
