@@ -44,38 +44,46 @@ except socket.error as e:
     sys.exit(1)
 
 server_socket.listen(1)
+server_socket.settimeout(1)
 
 logger.info(f"Server is listening on {ip}:{PORT}")
 
-while True:
-    try:
-        client_socket, addr = server_socket.accept()
-        iv = Random.new().read(BLOCK_SIZE)
-        client_socket.send(iv)
-        logger.info(f"Got a connection from {addr}")
+try:
+    while True:
+        try:
+            client_socket, addr = server_socket.accept()
+            iv = Random.new().read(BLOCK_SIZE)
+            client_socket.send(iv)
+            logger.info(f"Got a connection from {addr}")
 
-        data = client_socket.recv(1024)
-        if data == b"":
-            raise ConnectionError("Connection closed by client")
-        decrypted_data = decrypt(KEY, data)
-        if decrypted_data is None:
-            raise Exception("Error decrypting data")
-    except ConnectionError:
-        logger.exception("Error with socket connection")
-        client_socket.send(b"0")
-        client_socket.close()
-        continue
-    except socket.error as e:
-        logger.exception("Error receiving data")
-        client_socket.send(b"0")
-        client_socket.close()
-        continue
-    except Exception as e:
-        logger.exception("General error")
-        client_socket.send(b"0")
-        client_socket.close()
-        continue
+            data = client_socket.recv(1024)
+            if data == b"":
+                raise ConnectionError("Connection closed by client")
+            decrypted_data = decrypt(KEY, data)
+            if decrypted_data is None:
+                raise Exception("Error decrypting data")
+        except ConnectionError:
+            logger.exception("Error with socket connection")
+            client_socket.send(b"0")
+            client_socket.close()
+            continue
+        except socket.timeout:
+            continue
+        except socket.error as e:
+            logger.exception("Error receiving data")
+            client_socket.send(b"0")
+            client_socket.close()
+            continue
+        except Exception as e:
+            logger.exception("General error")
+            client_socket.send(b"0")
+            client_socket.close()
+            continue
 
-    logger.info(f"Decrypted data: {decrypted_data}")
-    client_socket.send(b"1")
-    client_socket.close()
+        logger.info(f"Decrypted data: {decrypted_data}")
+        client_socket.send(b"1")
+        client_socket.close()
+except KeyboardInterrupt:
+    logger.info("Shutting down server")
+    server_socket.close()
+    sys.exit(0)

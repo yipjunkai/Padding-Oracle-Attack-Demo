@@ -111,6 +111,7 @@ except socket.error as e:
     sys.exit(1)
 
 client_proxy_socket.listen(1)
+client_proxy_socket.settimeout(1)
 
 logger.info(f"Proxy server is listening on {ip}:{PROXY_PORT}")
 
@@ -124,35 +125,42 @@ except ConnectionRefusedError:
 except socket.error as e:
     logger.exception("Error receiving iv")
 
-while True:
-    try:
-        client_socket, addr = client_proxy_socket.accept()
-        client_socket.send(iv)
-        logger.info(f"Got a connection from {addr}")
+try:
+    while True:
+        try:
+            client_socket, addr = client_proxy_socket.accept()
+            client_socket.send(iv)
+            logger.info(f"Got a connection from {addr}")
 
-        cipher_text = client_socket.recv(1024)
-    except ConnectionError:
-        logger.exception("Error with socket connection")
-        client_socket.send(b"0")
+            cipher_text = client_socket.recv(1024)
+        except ConnectionError:
+            logger.exception("Error with socket connection")
+            client_socket.send(b"0")
+            client_socket.close()
+            continue
+        except socket.timeout:
+            continue
+        except socket.error as e:
+            logger.exception("Error receiving data")
+            client_socket.send(b"0")
+            client_socket.close()
+            continue
+
+        logger.info(f"Undecrypted data: {cipher_text}")
+        client_socket.send(b"1")
         client_socket.close()
-        continue
-    except socket.error as e:
-        logger.exception("Error receiving data")
-        client_socket.send(b"0")
-        client_socket.close()
-        continue
 
-    logger.info(f"Undecrypted data: {cipher_text}")
-    client_socket.send(b"1")
-    client_socket.close()
+        plain_text = b""
 
-    plain_text = b""
+        num_of_blocks = len(cipher_text) // BLOCK_SIZE
+        for __block in tqdm(range(num_of_blocks, 1, -1), leave=False):
+            __block_text = attack(
+                cipher_text[(__block - 2) * BLOCK_SIZE : (__block) * BLOCK_SIZE]
+            )
+            plain_text = __block_text + plain_text
 
-    num_of_blocks = len(cipher_text) // BLOCK_SIZE
-    for __block in tqdm(range(num_of_blocks, 1, -1), leave=False):
-        __block_text = attack(
-            cipher_text[(__block - 2) * BLOCK_SIZE : (__block) * BLOCK_SIZE]
-        )
-        plain_text = __block_text + plain_text
-
-    logger.info(f"Decrypted data: {remove_padding(plain_text)}")
+        logger.info(f"Decrypted data: {remove_padding(plain_text)}")
+except KeyboardInterrupt:
+    logger.info("Shutting down proxy server")
+    client_proxy_socket.close()
+    sys.exit(0)
