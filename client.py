@@ -3,7 +3,7 @@ import os
 import socket
 import sys
 
-from shared import encrypt
+from shared import HASH_SIZE, encrypt
 
 
 logging.basicConfig(
@@ -13,6 +13,16 @@ logger = logging.getLogger(__name__)
 
 
 KEY = b"m\x856n\xb4\xccF\xa7\xb0\xaas\x9cr\xe08\xce"
+"""
+Hash size is subtracted from the max message length because the hash is appended to the message before encryption.
+
+It could be added, but that would result in an additional block.
+
+256 is chose arbitrarily. The current demonstration is limited by the length of bytes sent through the socket; 1024.
+
+This limit can be removed by looping through the message and sending / receiving it in chunks.
+"""
+MAX_MESSAGE_LENGTH = 256 - HASH_SIZE
 
 
 if len(sys.argv) != 3:
@@ -42,8 +52,8 @@ except socket.error as e:
 
 while True:
     message = input("Enter message: ")
-    if len(message) > 240:
-        logger.error("Message too long. Max 240 characters.")
+    if len(message) > MAX_MESSAGE_LENGTH:
+        logger.error(f"Message too long. Max {MAX_MESSAGE_LENGTH} characters.")
         continue
     message = bytes(message, "utf-8")
     break

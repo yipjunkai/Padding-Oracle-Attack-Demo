@@ -40,6 +40,8 @@ In this simulation, we define the following key parameters and conditions to fac
 
 4. **Client-Proxy Interaction**: We assume that the client connects directly to the man-in-the-middle (MITM) proxy server.
 
+5. **Hash**: A (16 byte) MD5 hash of the plain text is appended to the plain text before encryption.
+
 This attack can be applied to any CBC-based encryption process, and it can target any padding format used; AES-CBC and PKCS7 was chosen for this demonstration.
 
 Please note that these parameters do not represent secure or recommended practices for real-world applications and are strictly for educational purposes.
@@ -48,13 +50,13 @@ Please note that these parameters do not represent secure or recommended practic
 
 ### Normal Client-Server Interaction
 
-![Normal Client-Server Interaction](image-4.png)
+![Normal Client-Server Interaction](./readme/image-4.png)
 
 The diagram above illustrates the normal interaction between the client and server.
 
 ### Padding Oracle Attack
 
-![Padding Oracle Attack](image-6.png)
+![Padding Oracle Attack](./readme/image-6.png)
 
 The second diagram demonstrates the Padding Oracle Attack in this project.
 

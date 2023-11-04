@@ -2,10 +2,11 @@ from Crypto.Cipher import AES
 from Crypto.Hash import MD5
 
 
-BLOCK_SIZE = AES.block_size
+BLOCK_SIZE = AES.block_size  # 16 bytes
+HASH_SIZE = MD5.digest_size  # 16 bytes
 
 
-# For server.py
+# For server.py and mitm.py
 def remove_padding(data: bytes) -> bytes:
     """
     Removes PKCS#7 padding from the given data.
@@ -28,6 +29,7 @@ def remove_padding(data: bytes) -> bytes:
     return data[:-pad_len]
 
 
+# For server.py
 def decrypt(key: bytes, data: bytes) -> bytes:
     """
     Decrypts the given data using AES-CBC with the given key.
@@ -48,6 +50,21 @@ def decrypt(key: bytes, data: bytes) -> bytes:
         raise Exception("Padding error")
 
     return remove_padding(decrypted_data)
+
+
+def verify_message_integrity(msg: bytes) -> bool:
+    """
+    Verifies the integrity of the given message by checking its hash.
+
+    Args:
+        msg (bytes): The message to verify.
+
+    Returns:
+        bool: True if the message hash matches the computed hash, False otherwise.
+    """
+    text = msg[:-HASH_SIZE]
+    computed_hash = __calculate_md5_hash(text)
+    return computed_hash == msg[-HASH_SIZE:]
 
 
 # For client.py
@@ -80,23 +97,19 @@ def encrypt(key: bytes, iv: bytes, msg: bytes) -> bytes:
         bytes: The encrypted message.
     """
     cipher = AES.new(key, AES.MODE_CBC, iv)
-    hash=add_hash(msg)
-    return iv + cipher.encrypt(__add_padding(msg+hash))
+    return iv + cipher.encrypt(__add_padding(msg + __calculate_md5_hash(msg)))
 
-def add_hash(msg: bytes):
-    
-    h = MD5.new()
-    h.update(msg)
-    return h.digest()
 
-def verify_hash(msg: bytes):
-    
-    text=msg[:-16]
-    h = MD5.new()
-    h.update(text)
-    if(h.digest() != msg[-16:]):
-        return 0
-    return 1
+def __calculate_md5_hash(msg: bytes) -> bytes:
+    """
+    Calculates the MD5 hash (16 bytes) of the given message.
 
-def remove_hash(msg: bytes):
-    return msg[:-16]
+    Args:
+        msg (bytes): The message to hash.
+
+    Returns:
+        bytes: The MD5 hash of the message.
+    """
+    md5 = MD5.new()
+    md5.update(msg)
+    return md5.digest()

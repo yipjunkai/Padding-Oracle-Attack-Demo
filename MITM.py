@@ -6,7 +6,7 @@ import sys
 from Crypto.Cipher import AES
 from tqdm import tqdm
 
-from shared import remove_padding,remove_hash
+from shared import HASH_SIZE, remove_padding
 
 
 logging.basicConfig(
@@ -147,6 +147,20 @@ try:
             continue
 
         logger.info(f"Undecrypted data: {cipher_text}")
+        try:
+            proxy_server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            proxy_server_socket.connect((SERVER_ADDRESS, SERVER_PORT))
+            proxy_server_socket.recv(1024)  # receive iv
+            proxy_server_socket.send(cipher_text)
+            ack = proxy_server_socket.recv(1024)
+        except ConnectionRefusedError:
+            logger.exception("Connection refused")
+            sys.exit(1)
+        except socket.error as e:
+            logger.exception("Error creating socket")
+            sys.exit(1)
+        client_socket.send(ack)
+        client_socket.close()
 
         plain_text = b""
 
@@ -156,19 +170,8 @@ try:
                 cipher_text[(__block - 2) * BLOCK_SIZE : (__block) * BLOCK_SIZE]
             )
             plain_text = __block_text + plain_text
-        
-        #send back ack from server 
-        proxy_server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        proxy_server_socket.connect((SERVER_ADDRESS, SERVER_PORT))
-        proxy_server_socket.recv(1024)
-        proxy_server_socket.send(cipher_text)
-        ack=proxy_server_socket.recv(1024) 
-        client_socket.send(ack)
-        client_socket.close()
-        logger.info(f"Decrypted data: {remove_hash(remove_padding(plain_text))}")
 
-
-
+        logger.info(f"Decrypted data: {remove_padding(plain_text)[:-HASH_SIZE]}")
 except KeyboardInterrupt:
     logger.info("Shutting down proxy server")
     client_proxy_socket.close()

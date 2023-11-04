@@ -5,13 +5,20 @@ import sys
 
 from Crypto import Random
 
-from shared import BLOCK_SIZE, decrypt,verify_hash,remove_hash
+from shared import BLOCK_SIZE, HASH_SIZE, decrypt, verify_message_integrity
 
 
 logging.basicConfig(
-    format="%(asctime)s [%(levelname)s] %(message)s", level=logging.INFO
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    level=logging.INFO,
 )
 logger = logging.getLogger(__name__)
+
+file_handler = logging.FileHandler("server.log")
+file_handler.setLevel(logging.INFO)
+file_handler.setFormatter(logging.Formatter("[%(asctime)s] %(message)s"))
+file_logger = logging.getLogger("file_logger")
+file_logger.addHandler(file_handler)
 
 
 KEY = b"m\x856n\xb4\xccF\xa7\xb0\xaas\x9cr\xe08\xce"
@@ -48,7 +55,6 @@ server_socket.settimeout(1)
 
 logger.info(f"Server is listening on {ip}:{PORT}")
 
-
 try:
     while True:
         try:
@@ -81,17 +87,15 @@ try:
             client_socket.close()
             continue
 
-        hash_check=verify_hash(decrypted_data)
-        if hash_check == 0:
-            logger.info(f"Hash error")
+        if not verify_message_integrity(decrypted_data):
+            logger.info(f"Hash mismatch")
             client_socket.send(b"2")
             client_socket.close()
             continue
 
-        logger.info(f"Decrypted data: {remove_hash(decrypted_data)}")
-        file = open("Messages.txt", "a")
-        file.write(remove_hash(decrypted_data).decode()+"\n")
-        file.close()
+        plain_text = decrypted_data[:-HASH_SIZE]
+        file_logger.info(plain_text)
+        logger.info(f"Decrypted data: {plain_text}")
         client_socket.send(b"1")
         client_socket.close()
 except KeyboardInterrupt:
