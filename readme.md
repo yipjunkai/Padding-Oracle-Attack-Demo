@@ -48,17 +48,10 @@ Please note that these parameters do not represent secure or recommended practic
 
 ## System Illustrations
 
-### Normal Client-Server Interaction
-
-![Normal Client-Server Interaction](./readme/image-4.png)
-
-The diagram above illustrates the normal interaction between the client and server.
-
-### Padding Oracle Attack
-
-![Padding Oracle Attack](./readme/image-6.png)
-
-The second diagram demonstrates the Padding Oracle Attack in this project.
+| Normal Client-Server Interaction                                                    | Intercepted interaction                                                    |
+| ----------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| ![Normal Client-Server Interaction](./readme/image-4.png)                           | ![Padding Oracle Attack](./readme/image-6.png)                             |
+| The diagram above illustrates the normal interaction between the client and server. | The second diagram demonstrates the Padding Oracle Attack in this project. |
 
 ## Project Structure
 
