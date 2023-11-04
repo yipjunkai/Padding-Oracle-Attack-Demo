@@ -8,7 +8,7 @@ This project was written by [Jian Wei](https://www.linkedin.com/in/jianwei99/) a
 
 ## How the Padding Oracle Attack Works
 
-The Padding Oracle Attack on AES in Cipher Block Chaining (CBC) mode is a cryptographic attack that takes advantage of vulnerabilities in the way data is encrypted and decrypted. Here's a simplified explanation of how this attack works:
+The Padding Oracle Attack is a cryptographic attack that takes advantage of vulnerabilities in the way data is encrypted and decrypted. Here's a simplified explanation of how this attack works:
 
 1. **AES-CBC Encryption**: In AES-CBC encryption, data is divided into fixed-size blocks, and each block is encrypted using the AES encryption algorithm. The encryption process also involves an Initialization Vector (IV) and an encryption key.
 
@@ -32,19 +32,19 @@ The Padding Oracle Attack on AES in Cipher Block Chaining (CBC) mode is a crypto
 
 In this simulation, we define the following key parameters and conditions to facilitate the simulation of the attack:
 
-1. **Encryption key**: The encryption key is fixed on both server and client. A random 16-byte was chosen.
+1. **Hash**: A (16 byte) MD5 hash of the plain text is appended to the plain text before encryption.
 
-2. **Initialization Vector (IV) Generation**: The server generates the Initialization Vector (IV) randomly for each encryption session and passes it over to the client / MITM during the initial connection.
+2. **Encryption**: AES 128 was used; hence a block is 16 bytes.
 
-3. **Padding Scheme**: We assume the use of PKCS7 padding in this simulation. It is used for simplicity in this project.
+3. **Encryption key**: The encryption key is fixed on both server and client. A random 16-byte was chosen.
 
-4. **Client-Proxy Interaction**: We assume that the client connects directly to the man-in-the-middle (MITM) proxy server.
+4. **Initialization Vector (IV) Generation**: The server generates the Initialization Vector (IV) randomly for each encryption session and passes it over to the client / MITM during the initial connection.
 
-5. **Hash**: A (16 byte) MD5 hash of the plain text is appended to the plain text before encryption.
+5. **Padding Scheme**: We assume the use of PKCS7 padding in this simulation. It is used for simplicity in this project.
 
-This attack can be applied to any CBC-based encryption process, and it can target any padding format used; AES-CBC and PKCS7 was chosen for this demonstration.
+6. **Client-Proxy Interaction**: We assume that the client connects directly to the man-in-the-middle (MITM) proxy server.
 
-Please note that these parameters do not represent secure or recommended practices for real-world applications and are strictly for educational purposes.
+This attack can be applied to any CBC-based encryption process, and it can target any padding format used; AES 128 and PKCS7 were chosen for this demonstration.
 
 ## System Illustrations
 
